@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Diagram>
+  <ID>DATABASE</ID>
+  <OriginalElement>c8a5a783-a98d-4112-8a47-33a51f40fbc6.DATABASE:fitbuddy</OriginalElement>
+  <nodes>
+    <node x="59.5" y="670.5">c8a5a783-a98d-4112-8a47-33a51f40fbc6.TABLE:fitbuddy.public.session_messages</node>
+    <node x="-137.0" y="347.5">c8a5a783-a98d-4112-8a47-33a51f40fbc6.TABLE:fitbuddy.public.invites</node>
+    <node x="68.5" y="-101.0">c8a5a783-a98d-4112-8a47-33a51f40fbc6.TABLE:fitbuddy.public.users</node>
+    <node x="347.0" y="170.5">c8a5a783-a98d-4112-8a47-33a51f40fbc6.TABLE:fitbuddy.public.user_settings</node>
+    <node x="333.5" y="670.5">c8a5a783-a98d-4112-8a47-33a51f40fbc6.TABLE:fitbuddy.public.session_participants</node>
+    <node x="190.5" y="359.0">c8a5a783-a98d-4112-8a47-33a51f40fbc6.TABLE:fitbuddy.public.run_sessions</node>
+  </nodes>
+  <notes />
+  <edges>
+    <edge source="c8a5a783-a98d-4112-8a47-33a51f40fbc6.TABLE:fitbuddy.public.user_settings" target="c8a5a783-a98d-4112-8a47-33a51f40fbc6.TABLE:fitbuddy.public.users" relationship="REFERENCES">
+      <point x="0.0" y="-77.5" />
+      <point x="480.0" y="108.0" />
+      <point x="298.625" y="108.0" />
+      <point x="98.625" y="89.0" />
+    </edge>
+    <edge source="c8a5a783-a98d-4112-8a47-33a51f40fbc6.TABLE:fitbuddy.public.session_participants" target="c8a5a783-a98d-4112-8a47-33a51f40fbc6.TABLE:fitbuddy.public.users" relationship="REFERENCES">
+      <point x="63.25" y="-77.5" />
+      <point x="523.25" y="648.0" />
+      <point x="640.0" y="648.0" />
+      <point x="640.0" y="148.0" />
+      <point x="480.0" y="148.0" />
+      <point x="480.0" y="108.0" />
+      <point x="298.625" y="108.0" />
+      <point x="98.625" y="89.0" />
+    </edge>
+    <edge source="c8a5a783-a98d-4112-8a47-33a51f40fbc6.TABLE:fitbuddy.public.invites" target="c8a5a783-a98d-4112-8a47-33a51f40fbc6.TABLE:fitbuddy.public.users" relationship="REFERENCES">
+      <point x="-68.5" y="-100.5" />
+      <point x="-68.5" y="288.0" />
+      <point x="101.375" y="288.0" />
+      <point x="-98.625" y="89.0" />
+    </edge>
+    <edge source="c8a5a783-a98d-4112-8a47-33a51f40fbc6.TABLE:fitbuddy.public.run_sessions" target="c8a5a783-a98d-4112-8a47-33a51f40fbc6.TABLE:fitbuddy.public.users" relationship="REFERENCES">
+      <point x="0.0" y="-89.0" />
+      <point x="320.0" y="328.0" />
+      <point x="232.875" y="328.0" />
+      <point x="32.875" y="89.0" />
+    </edge>
+    <edge source="c8a5a783-a98d-4112-8a47-33a51f40fbc6.TABLE:fitbuddy.public.session_messages" target="c8a5a783-a98d-4112-8a47-33a51f40fbc6.TABLE:fitbuddy.public.users" relationship="REFERENCES">
+      <point x="-60.25" y="-77.5" />
+      <point x="119.75" y="648.0" />
+      <point x="160.0" y="648.0" />
+      <point x="160.0" y="108.0" />
+      <point x="167.125" y="108.0" />
+      <point x="-32.875" y="89.0" />
+    </edge>
+    <edge source="c8a5a783-a98d-4112-8a47-33a51f40fbc6.TABLE:fitbuddy.public.session_messages" target="c8a5a783-a98d-4112-8a47-33a51f40fbc6.TABLE:fitbuddy.public.run_sessions" relationship="REFERENCES">
+      <point x="60.25" y="-77.5" />
+      <point x="240.25" y="648.0" />
+      <point x="320.0" y="648.0" />
+      <point x="0.0" y="89.0" />
+    </edge>
+    <edge source="c8a5a783-a98d-4112-8a47-33a51f40fbc6.TABLE:fitbuddy.public.session_participants" target="c8a5a783-a98d-4112-8a47-33a51f40fbc6.TABLE:fitbuddy.public.run_sessions" relationship="REFERENCES">
+      <point x="-63.25" y="-77.5" />
+      <point x="396.75" y="648.0" />
+      <point x="320.0" y="648.0" />
+      <point x="0.0" y="89.0" />
+    </edge>
+  </edges>
+  <settings layout="Hierarchic Compact" zoom="1.0147835269271384" showDependencies="false" x="251.5" y="362.5" />
+  <SelectedNodes />
+  <Categories>
+    <Category>Columns</Category>
+    <Category>Comments</Category>
+    <Category>Key columns</Category>
+    <Category>Virtual foreign keys</Category>
+  </Categories>
+</Diagram>
+
