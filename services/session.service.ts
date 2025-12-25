@@ -2,11 +2,11 @@
 
 import { SessionRepository } from "../repositories/session.repository.js";
 import { SessionParticipantRepository } from "../repositories/sessionParticipant.repository.js";
-
 import { SessionType, SessionEndReason } from "../domain/constants.js";
 import { SessionNotFoundError, SessionAlreadyEndedError, UnauthorizedActionError } from "../domain/errors.js";
-
 import { Session } from "../domain/types.js";
+import { PresenceService } from "./presence.service.js";
+import { LocationService } from "./location.service.js";
 
 export const SessionService = {
 	/**
@@ -21,6 +21,10 @@ export const SessionService = {
 			await SessionRepository.endSession(activeSession.id, SessionEndReason.REPLACED);
 
 			await SessionParticipantRepository.markLeft(activeSession.id, userId);
+
+			// Redis cleanup (best-effort)
+			await PresenceService.clearPresence(userId);
+			await LocationService.clearLocation(userId);
 		}
 
 		// 2. Create new session
@@ -53,5 +57,9 @@ export const SessionService = {
 		await SessionRepository.endSession(sessionId, reason);
 
 		await SessionParticipantRepository.markLeft(sessionId, userId);
+
+		// Redis cleanup (best-effort)
+		await PresenceService.clearPresence(userId);
+		await LocationService.clearLocation(userId);
 	},
 };
