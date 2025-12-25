@@ -1,3 +1,4 @@
+// repositories/invite.repository.ts
 import { dbPool } from "./db.js";
 
 export type InviteRow = {
