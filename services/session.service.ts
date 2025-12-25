@@ -10,6 +10,7 @@ import { LocationService } from "./location.service.js";
 import { getSocketServer } from "../realtime/socket.server.js";
 import { RealtimeEvents } from "../realtime/events.js";
 import { ConnectionManager } from "../realtime/connection.manager.js";
+import { AuthedSocket } from "../realtime/types.js";
 
 export const SessionService = {
 	/**
@@ -31,13 +32,12 @@ export const SessionService = {
 			await PresenceService.clearPresence(userId);
 			await LocationService.clearLocation(userId);
 
-			// Leave old session room and clear sessionId
+			// Leave old session room and clear sessionId (per-socket, user-intent driven)
 			const userSockets = ConnectionManager.getSockets(userId);
 			userSockets.forEach((socketId) => {
-				const socket = io.sockets.sockets.get(socketId);
+				const socket = io.sockets.sockets.get(socketId) as AuthedSocket | undefined;
 				if (socket) {
 					socket.leave(`session:${activeSession.id}`);
-					// @ts-ignore
 					socket.sessionId = undefined;
 				}
 			});
@@ -52,23 +52,22 @@ export const SessionService = {
 		// 4. Join session room for owner and set sessionId context
 		const userSockets = ConnectionManager.getSockets(userId);
 		userSockets.forEach((socketId) => {
-			const socket = io.sockets.sockets.get(socketId);
+			const socket = io.sockets.sockets.get(socketId) as AuthedSocket | undefined;
 			if (socket) {
 				socket.join(`session:${newSession.id}`);
-				// @ts-ignore - adding sessionId to socket context
 				socket.sessionId = newSession.id;
 			}
 		});
 
-		// 5. Emit realtime events after DB commits
-		io.emit(RealtimeEvents.SESSION_STARTED, {
+		// 5. Emit realtime events after DB commits (room-scoped, not global)
+		io.to(`session:${newSession.id}`).emit(RealtimeEvents.SESSION_STARTED, {
 			session_id: newSession.id,
 			owner_user_id: userId,
 			type,
 			started_at: newSession.started_at,
 		});
 
-		io.emit(RealtimeEvents.USER_JOINED, {
+		io.to(`session:${newSession.id}`).emit(RealtimeEvents.USER_JOINED, {
 			session_id: newSession.id,
 			user_id: userId,
 			role: "owner",
@@ -104,28 +103,26 @@ export const SessionService = {
 		await PresenceService.clearPresence(userId);
 		await LocationService.clearLocation(userId);
 
-		// Leave session room and clear sessionId
 		const io = getSocketServer();
-		io.in(`session:${sessionId}`).socketsLeave(`session:${sessionId}`);
 
-		// Clear sessionId from all user's sockets
+		// Leave session room per-socket (user-intent driven, not aggressive global kick)
 		const userSockets = ConnectionManager.getSockets(userId);
 		userSockets.forEach((socketId) => {
-			const socket = io.sockets.sockets.get(socketId);
+			const socket = io.sockets.sockets.get(socketId) as AuthedSocket | undefined;
 			if (socket) {
-				// @ts-ignore
+				socket.leave(`session:${sessionId}`);
 				socket.sessionId = undefined;
 			}
 		});
 
-		// Emit realtime events after DB commits and cleanup
-		io.emit(RealtimeEvents.SESSION_ENDED, {
+		// Emit realtime events after DB commits and cleanup (room-scoped, not global)
+		io.to(`session:${sessionId}`).emit(RealtimeEvents.SESSION_ENDED, {
 			session_id: sessionId,
 			ended_reason: reason,
 			timestamp: new Date().toISOString(),
 		});
 
-		io.emit(RealtimeEvents.USER_LEFT, {
+		io.to(`session:${sessionId}`).emit(RealtimeEvents.USER_LEFT, {
 			session_id: sessionId,
 			user_id: userId,
 			timestamp: new Date().toISOString(),

@@ -1,8 +1,8 @@
 // realtime/handlers/location.handler.ts
-import { Socket } from "socket.io"
 import { LocationService } from "../../services/location.service.js";
 import { getSocketServer } from "../socket.server.js";
 import { RealtimeEvents } from "../events.js";
+import { AuthedSocket } from "../types.js";
 
 /**
  * Last-write-wins throttle state (per user).
@@ -20,11 +20,6 @@ const pendingByUser = new Map<string, Pending>();
 const timerByUser = new Map<string, NodeJS.Timeout>();
 
 const THROTTLE_MS = 1000;
-
-type AuthedSocket = Socket & {
-	userId?: string;
-	sessionId?: string; // set when user joins a session room
-};
 
 export function registerLocationHandler(socket: AuthedSocket) {
 	socket.on("location_update", async (payload: { lat: number; lng: number; accuracy: number }) => {
