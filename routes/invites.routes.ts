@@ -1,4 +1,5 @@
-import { Router } from "express";
+// routes/invites.routes.ts
+import { Router } from "express"
 import { InviteController } from "../controllers/invite.controller.js";
 import { fakeAuth } from "../middleware/fakeAuth.middleware.js";
 
