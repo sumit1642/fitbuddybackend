@@ -1,5 +1,6 @@
 // repositories/invite.repository.ts
 import { dbPool } from "./db.js";
+import type { PoolClient } from "pg";
 
 export type InviteRow = {
 	id: string;
@@ -31,17 +32,72 @@ export const InviteRepository = {
 		return rows[0] ?? null;
 	},
 
-	async markAccepted(inviteId: string, client?: any) {
+	/**
+	 * Mark invite as accepted ONLY if it's still pending.
+	 * Returns true if accepted, false if already processed.
+	 *
+	 * Race-safe: Multiple concurrent calls will only succeed once.
+	 * The WHERE clause ensures atomic state transition.
+	 */
+	async markAccepted(inviteId: string, client?: PoolClient): Promise<boolean> {
 		const queryRunner = client ?? dbPool;
-		await queryRunner.query(`UPDATE invites SET accepted_at = now() WHERE id = $1`, [inviteId]);
+
+		const result = await queryRunner.query(
+			`
+			UPDATE invites 
+			SET accepted_at = now() 
+			WHERE id = $1
+			  AND accepted_at IS NULL
+			  AND declined_at IS NULL
+			  AND revoked_at IS NULL
+			RETURNING id
+			`,
+			[inviteId],
+		);
+
+		return result.rowCount === 1;
 	},
 
-	async markDeclined(inviteId: string) {
-		await dbPool.query(`UPDATE invites SET declined_at = now() WHERE id = $1`, [inviteId]);
+	/**
+	 * Mark invite as declined ONLY if it's still pending.
+	 * Returns true if declined, false if already processed.
+	 */
+	async markDeclined(inviteId: string): Promise<boolean> {
+		const result = await dbPool.query(
+			`
+			UPDATE invites 
+			SET declined_at = now() 
+			WHERE id = $1
+			  AND accepted_at IS NULL
+			  AND declined_at IS NULL
+			  AND revoked_at IS NULL
+			RETURNING id
+			`,
+			[inviteId],
+		);
+
+		return result.rowCount === 1;
 	},
 
-	async markRevoked(inviteId: string) {
-		await dbPool.query(`UPDATE invites SET revoked_at = now() WHERE id = $1`, [inviteId]);
+	/**
+	 * Mark invite as revoked ONLY if it's still pending.
+	 * Returns true if revoked, false if already processed.
+	 */
+	async markRevoked(inviteId: string): Promise<boolean> {
+		const result = await dbPool.query(
+			`
+			UPDATE invites 
+			SET revoked_at = now() 
+			WHERE id = $1
+			  AND accepted_at IS NULL
+			  AND declined_at IS NULL
+			  AND revoked_at IS NULL
+			RETURNING id
+			`,
+			[inviteId],
+		);
+
+		return result.rowCount === 1;
 	},
 
 	async listPendingForUser(userId: string) {
