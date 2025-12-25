@@ -38,6 +38,17 @@ export class SessionNotFoundError extends DomainError {
 }
 
 /**
+ * Thrown when trying to end a session that's already ended.
+ */
+export class SessionAlreadyEndedError extends DomainError {
+	readonly code = "SESSION_ALREADY_ENDED";
+
+	constructor(sessionId: string) {
+		super(`Session ${sessionId} has already ended`);
+	}
+}
+
+/**
  * Throws when a user attempts an action which
  * they are not allowed to perform.
  */
