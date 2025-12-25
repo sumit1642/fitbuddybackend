@@ -1,4 +1,3 @@
-// repositories/invite.repository.ts
 import { dbPool } from "./db.js";
 
 export type InviteRow = {
@@ -31,8 +30,9 @@ export const InviteRepository = {
 		return rows[0] ?? null;
 	},
 
-	async markAccepted(inviteId: string) {
-		await dbPool.query(`UPDATE invites SET accepted_at = now() WHERE id = $1`, [inviteId]);
+	async markAccepted(inviteId: string, client?: any) {
+		const queryRunner = client ?? dbPool;
+		await queryRunner.query(`UPDATE invites SET accepted_at = now() WHERE id = $1`, [inviteId]);
 	},
 
 	async markDeclined(inviteId: string) {
