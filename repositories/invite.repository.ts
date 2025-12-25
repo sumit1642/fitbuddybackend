@@ -1,4 +1,5 @@
-import { pool } from "./db.js";
+// repositories/invite.repository.ts
+import { dbPool } from "./db.js";
 
 export type InviteRow = {
 	id: string;
@@ -14,7 +15,7 @@ export type InviteRow = {
 
 export const InviteRepository = {
 	async create(fromUserId: string, toUserId: string, sessionId: string, sessionType: string) {
-		const { rows } = await pool.query<InviteRow>(
+		const { rows } = await dbPool.query<InviteRow>(
 			`
 			INSERT INTO invites (from_user_id, to_user_id, session_id, session_type)
 			VALUES ($1, $2, $3, $4)
@@ -26,24 +27,24 @@ export const InviteRepository = {
 	},
 
 	async findById(inviteId: string) {
-		const { rows } = await pool.query<InviteRow>(`SELECT * FROM invites WHERE id = $1`, [inviteId]);
+		const { rows } = await dbPool.query<InviteRow>(`SELECT * FROM invites WHERE id = $1`, [inviteId]);
 		return rows[0] ?? null;
 	},
 
 	async markAccepted(inviteId: string) {
-		await pool.query(`UPDATE invites SET accepted_at = now() WHERE id = $1`, [inviteId]);
+		await dbPool.query(`UPDATE invites SET accepted_at = now() WHERE id = $1`, [inviteId]);
 	},
 
 	async markDeclined(inviteId: string) {
-		await pool.query(`UPDATE invites SET declined_at = now() WHERE id = $1`, [inviteId]);
+		await dbPool.query(`UPDATE invites SET declined_at = now() WHERE id = $1`, [inviteId]);
 	},
 
 	async markRevoked(inviteId: string) {
-		await pool.query(`UPDATE invites SET revoked_at = now() WHERE id = $1`, [inviteId]);
+		await dbPool.query(`UPDATE invites SET revoked_at = now() WHERE id = $1`, [inviteId]);
 	},
 
 	async listPendingForUser(userId: string) {
-		const { rows } = await pool.query<InviteRow>(
+		const { rows } = await dbPool.query<InviteRow>(
 			`
 			SELECT *
 			FROM invites
