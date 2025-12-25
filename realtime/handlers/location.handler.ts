@@ -3,6 +3,7 @@ import { LocationService } from "../../services/location.service.js";
 import { getSocketServer } from "../socket.server.js";
 import { RealtimeEvents } from "../events.js";
 import { AuthedSocket } from "../types.js";
+import { ConnectionManager } from "../connection.manager.js";
 
 /**
  * Last-write-wins throttle state (per user).
@@ -51,7 +52,22 @@ export function registerLocationHandler(socket: AuthedSocket) {
 			const pending = pendingByUser.get(userId);
 			if (!pending) return;
 
+			// Verify the pending update is still for an active session
+			// by checking if ANY of the user's current sockets are in that session
 			const io = getSocketServer();
+			const userSockets = ConnectionManager.getSockets(userId);
+
+			const stillInSession = userSockets.some((socketId) => {
+				const sock = io.sockets.sockets.get(socketId) as AuthedSocket | undefined;
+				return sock?.sessionId === pending.sessionId;
+			});
+
+			if (!stillInSession) {
+				// User left/switched session before throttle window ended
+				pendingByUser.delete(userId);
+				timerByUser.delete(userId);
+				return;
+			}
 
 			// Fan-out ONLY to the session room
 			io.to(`session:${pending.sessionId}`).emit(RealtimeEvents.LOCATION_UPDATE, {
