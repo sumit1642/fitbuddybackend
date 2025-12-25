@@ -1,10 +1,12 @@
 // realtime/socket.server.ts
-import { Server as HttpServer } from "http"
+import { Server as HttpServer } from "http";
 import { Server, Socket } from "socket.io";
 import { ConnectionManager } from "./connection.manager.js";
 import { RealtimeEvents } from "./events.js";
 
 type AuthedSocket = Socket & { userId?: string };
+
+let ioInstance: Server | null = null;
 
 export function initSocketServer(httpServer: HttpServer) {
 	const io = new Server(httpServer, {
@@ -12,6 +14,8 @@ export function initSocketServer(httpServer: HttpServer) {
 			origin: "*", // dev only
 		},
 	});
+
+	ioInstance = io;
 
 	io.on("connection", (socket: AuthedSocket) => {
 		// Fake auth for local dev (match fakeAuth middleware)
@@ -36,4 +40,11 @@ export function initSocketServer(httpServer: HttpServer) {
 
 	console.log("🔌 Socket.IO ready");
 	return io;
+}
+
+export function getSocketServer(): Server {
+	if (!ioInstance) {
+		throw new Error("Socket.IO not initialized");
+	}
+	return ioInstance;
 }
