@@ -1,5 +1,5 @@
 // services/invite.service.ts
-import { InviteRepository } from "../repositories/invite.repository.js"
+import { InviteRepository } from "../repositories/invite.repository.js";
 import { SessionRepository } from "../repositories/session.repository.js";
 import { SessionParticipantRepository } from "../repositories/sessionParticipant.repository.js";
 import { UserSettingsRepository } from "../repositories/user-settings.repository.js";
@@ -44,6 +44,7 @@ export const InviteService = {
 			throw new Error("Not your invite");
 		}
 
+		// Race-safe pre-check (advisory only, real guard is in markAccepted)
 		if (invite.accepted_at || invite.declined_at || invite.revoked_at) {
 			throw new Error("Invite not pending");
 		}
@@ -53,16 +54,23 @@ export const InviteService = {
 			throw new Error("Session no longer active");
 		}
 
-		// Transaction: Mark invite accepted + Add participant atomically
+		// Transaction: Atomically accept invite + add participant
 		const client = await dbPool.connect();
 		try {
 			await client.query("BEGIN");
 
-			// Mark invite accepted using repository (within transaction)
-			await InviteRepository.markAccepted(inviteId, client);
+			// CRITICAL: markAccepted returns false if already processed
+			// This is the REAL race guard - only one caller succeeds
+			const accepted = await InviteRepository.markAccepted(inviteId, client);
 
-			// Add participant using repository (within transaction)
-			// Repository handles idempotency with ON CONFLICT
+			if (!accepted) {
+				// Someone else already accepted/declined/revoked this invite
+				// Roll back and fail gracefully
+				await client.query("ROLLBACK");
+				throw new Error("Invite no longer pending");
+			}
+
+			// Add participant - idempotent due to ON CONFLICT
 			await SessionParticipantRepository.addParticipant(invite.session_id, userId, "invited", client);
 
 			await client.query("COMMIT");
@@ -73,10 +81,11 @@ export const InviteService = {
 			client.release();
 		}
 
-		// Phase 6 handoff: Join socket rooms and emit events
+		// Realtime updates AFTER successful DB commit
 		const io = getSocketServer();
 		const userSockets = ConnectionManager.getSockets(userId);
 
+		// Join session room and set context
 		userSockets.forEach((socketId) => {
 			const socket = io.sockets.sockets.get(socketId) as AuthedSocket | undefined;
 			if (socket) {
@@ -85,6 +94,7 @@ export const InviteService = {
 			}
 		});
 
+		// Notify session participants
 		io.to(`session:${invite.session_id}`).emit(RealtimeEvents.USER_JOINED, {
 			session_id: invite.session_id,
 			user_id: userId,
@@ -98,11 +108,17 @@ export const InviteService = {
 		if (!invite) throw new Error("Invite not found");
 		if (invite.to_user_id !== userId) throw new Error("Not your invite");
 
+		// Race-safe pre-check (advisory)
 		if (invite.accepted_at || invite.declined_at || invite.revoked_at) {
 			throw new Error("Invite not pending");
 		}
 
-		await InviteRepository.markDeclined(inviteId);
+		// markDeclined is now race-safe with WHERE guards
+		const declined = await InviteRepository.markDeclined(inviteId);
+
+		if (!declined) {
+			throw new Error("Invite no longer pending");
+		}
 	},
 
 	async revokeInvite(inviteId: string, ownerId: string) {
@@ -114,10 +130,16 @@ export const InviteService = {
 			throw new Error("Only owner can revoke");
 		}
 
+		// Race-safe pre-check (advisory)
 		if (invite.accepted_at || invite.declined_at || invite.revoked_at) {
 			throw new Error("Invite not pending");
 		}
 
-		await InviteRepository.markRevoked(inviteId);
+		// markRevoked is now race-safe with WHERE guards
+		const revoked = await InviteRepository.markRevoked(inviteId);
+
+		if (!revoked) {
+			throw new Error("Invite no longer pending");
+		}
 	},
 };
