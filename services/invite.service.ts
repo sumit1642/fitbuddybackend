@@ -1,17 +1,37 @@
 import { InviteRepository } from "../repositories/invite.repository.js";
 import { SessionRepository } from "../repositories/session.repository.js";
 import { SessionParticipantRepository } from "../repositories/sessionParticipant.repository.js";
+import { UserSettingsRepository } from "../repositories/user-settings.repository.js";
 import { ConnectionManager } from "../realtime/connection.manager.js";
 import { getSocketServer } from "../realtime/socket.server.js";
 import { RealtimeEvents } from "../realtime/events.js";
 import { AuthedSocket } from "../realtime/types.js";
+import { dbPool } from "../repositories/db.js";
 
 export const InviteService = {
 	async sendInvite(fromUserId: string, toUserId: string, sessionId: string) {
+		// 1. Check session exists and sender is owner
 		const session = await SessionRepository.findById(sessionId);
 		if (!session) throw new Error("Session not found");
 		if (session.owner_user_id !== fromUserId) throw new Error("Only owner can invite");
 
+		// 2. Check recipient's invite permissions
+		const toUserSettings = await UserSettingsRepository.findByUserId(toUserId);
+
+		if (!toUserSettings) {
+			throw new Error("Recipient user settings not found");
+		}
+
+		if (toUserSettings.invite_permissions === "none") {
+			throw new Error("User has disabled invites");
+		}
+
+		// TODO: Implement 'friends' check when friendship system exists
+		if (toUserSettings.invite_permissions === "friends") {
+			throw new Error("Friend-only invites not yet implemented");
+		}
+
+		// 3. Create invite
 		return InviteRepository.create(fromUserId, toUserId, sessionId, session.type);
 	},
 
@@ -32,11 +52,27 @@ export const InviteService = {
 			throw new Error("Session no longer active");
 		}
 
-		await InviteRepository.markAccepted(inviteId);
+		// Transaction: Mark invite accepted + Add participant atomically
+		const client = await dbPool.connect();
+		try {
+			await client.query("BEGIN");
 
-		await SessionParticipantRepository.addParticipant(invite.session_id, userId, "invited");
+			// Mark invite accepted using repository (within transaction)
+			await InviteRepository.markAccepted(inviteId, client);
 
-		// Phase 6 handoff
+			// Add participant using repository (within transaction)
+			// Repository handles idempotency with ON CONFLICT
+			await SessionParticipantRepository.addParticipant(invite.session_id, userId, "invited", client);
+
+			await client.query("COMMIT");
+		} catch (err) {
+			await client.query("ROLLBACK");
+			throw err;
+		} finally {
+			client.release();
+		}
+
+		// Phase 6 handoff: Join socket rooms and emit events
 		const io = getSocketServer();
 		const userSockets = ConnectionManager.getSockets(userId);
 
