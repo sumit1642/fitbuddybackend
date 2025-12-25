@@ -3,8 +3,12 @@ import { Server as HttpServer } from "http";
 import { Server, Socket } from "socket.io";
 import { ConnectionManager } from "./connection.manager.js";
 import { RealtimeEvents } from "./events.js";
+import { registerLocationHandler } from "./handlers/location.handler.js";
 
-type AuthedSocket = Socket & { userId?: string };
+type AuthedSocket = Socket & {
+	userId?: string;
+	sessionId?: string;
+};
 
 let ioInstance: Server | null = null;
 
@@ -22,7 +26,12 @@ export function initSocketServer(httpServer: HttpServer) {
 		const userId = (socket.handshake.auth?.userId as string) ?? "00000000-0000-0000-0000-000000000000";
 
 		socket.userId = userId;
+		socket.sessionId = undefined; // session context set on session start
+
 		ConnectionManager.add(userId, socket);
+
+		// Register handlers
+		registerLocationHandler(socket);
 
 		socket.emit(RealtimeEvents.CONNECTED, {
 			socketId: socket.id,
