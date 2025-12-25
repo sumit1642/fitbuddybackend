@@ -1,4 +1,5 @@
-import { InviteRepository } from "../repositories/invite.repository.js";
+// services/invite.service.ts
+import { InviteRepository } from "../repositories/invite.repository.js"
 import { SessionRepository } from "../repositories/session.repository.js";
 import { SessionParticipantRepository } from "../repositories/sessionParticipant.repository.js";
 import { UserSettingsRepository } from "../repositories/user-settings.repository.js";
