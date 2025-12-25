@@ -7,6 +7,8 @@ export const RealtimeEvents = {
 
 	SESSION_STARTED: "session_started",
 	SESSION_ENDED: "session_ended",
+	SESSION_RESUMED: "session_resumed",
+
 	USER_JOINED: "user_joined",
 	USER_LEFT: "user_left",
 
