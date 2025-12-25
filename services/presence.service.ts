@@ -1,5 +1,8 @@
+// services/presence.service.ts
 import { redis } from "../infrastructure/redis/client.js";
 import { RedisKeys } from "../infrastructure/redis/keys.js";
+import { getSocketServer } from "../realtime/socket.server.js";
+import { RealtimeEvents } from "../realtime/events.js";
 
 const PRESENCE_TTL_SECONDS = 30;
 
@@ -19,9 +22,22 @@ export const PresenceService = {
 			last_seen: new Date().toISOString(),
 		};
 
+		// Check if user was offline before this heartbeat
+		const wasOffline = !(await redis.exists(RedisKeys.presence(userId)));
+
 		await redis.set(RedisKeys.presence(userId), JSON.stringify(payload), {
 			EX: PRESENCE_TTL_SECONDS,
 		});
+
+		// Emit user_online only on transition from offline to online
+		if (wasOffline) {
+			const io = getSocketServer();
+			io.emit(RealtimeEvents.USER_ONLINE, {
+				user_id: userId,
+				session_id: sessionId,
+				timestamp: payload.last_seen,
+			});
+		}
 	},
 
 	/**
@@ -40,9 +56,34 @@ export const PresenceService = {
 
 	/**
 	 * Explicitly clear presence.
-	 * Used when a session is stopped.
+	 * Used when a session is stopped or explicitly ended.
+	 *
+	 * KNOWN LIMITATION:
+	 * If Redis TTL expires naturally (no heartbeats for ~30s),
+	 * USER_OFFLINE is NOT emitted automatically.
+	 *
+	 * This only affects crash / silent-disconnect scenarios
+	 * where clearPresence() is never called.
+	 *
+	 * Explicit session stops and controlled disconnects
+	 * emit USER_OFFLINE correctly.
+	 *
+	 * Future improvement:
+	 * - Use Redis keyspace notifications (__keyevent@__:expired)
+	 *   to emit USER_OFFLINE on TTL expiry.
+	 * - Revisit when realtime accuracy becomes critical.
 	 */
+
 	async clearPresence(userId: string): Promise<void> {
-		await redis.del(RedisKeys.presence(userId));
+		const existed = await redis.del(RedisKeys.presence(userId));
+
+		// Emit user_offline only if presence actually existed
+		if (existed) {
+			const io = getSocketServer();
+			io.emit(RealtimeEvents.USER_OFFLINE, {
+				user_id: userId,
+				timestamp: new Date().toISOString(),
+			});
+		}
 	},
 };
