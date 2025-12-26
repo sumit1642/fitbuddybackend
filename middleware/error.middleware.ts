@@ -9,15 +9,18 @@ export function errorHandler(err: Error, _req: Request, res: Response, _next: Ne
 			// 404 Errors
 			case "SESSION_NOT_FOUND":
 			case "INVITE_NOT_FOUND":
+			case "FRIEND_REQUEST_NOT_FOUND":
 				return res.status(404).json({ error: err.message });
 
 			// 409 Conflict Errors
 			case "SESSION_ALREADY_ENDED":
+			case "ALREADY_FRIENDS":
 				return res.status(409).json({ error: err.message });
 
 			// 403 Forbidden Errors
 			case "UNAUTHORIZED_ACTION":
 			case "NOT_YOUR_INVITE":
+			case "NOT_YOUR_FRIEND_REQUEST":
 			case "ONLY_OWNER_CAN_INVITE":
 			case "ONLY_OWNER_CAN_REVOKE":
 			case "USER_DISABLED_INVITES":
@@ -25,6 +28,7 @@ export function errorHandler(err: Error, _req: Request, res: Response, _next: Ne
 
 			// 400 Bad Request Errors
 			case "INVITE_NOT_PENDING":
+			case "FRIEND_REQUEST_NOT_PENDING":
 			case "SESSION_NO_LONGER_ACTIVE":
 			case "INVALID_SESSION_STATE":
 			case "ACTIVE_SESSION_EXISTS":
