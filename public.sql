@@ -1,3 +1,6 @@
+-- =========================
+-- USERS
+-- =========================
 CREATE TABLE users (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid (),
     email TEXT NOT NULL UNIQUE,
@@ -15,6 +18,9 @@ CREATE TABLE users (
 
 CREATE INDEX users_status_idx ON users (status);
 
+-- =========================
+-- USER SETTINGS
+-- =========================
 CREATE TABLE user_settings (
     user_id UUID PRIMARY KEY REFERENCES users (id) ON DELETE CASCADE,
     default_visibility TEXT NOT NULL DEFAULT 'public' CHECK (
@@ -27,38 +33,9 @@ CREATE TABLE user_settings (
     updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
-INSERT INTO
-    users (email, display_name)
-VALUES (
-        'test@fitbuddy.dev',
-        'Test Runner'
-    )
-RETURNING
-    id;
-
-SELECT id, email, display_name
-FROM users
-WHERE
-    email = 'test@fitbuddy.dev';
-
-INSERT INTO
-    user_settings (user_id)
-VALUES (
-        '299033dc-77a1-434c-8954-a3459707bd27'
-    );
-
-SELECT *
-FROM user_settings
-WHERE
-    user_id = '299033dc-77a1-434c-8954-a3459707bd27';
-
-DELETE FROM users WHERE id = '299033dc-77a1-434c-8954-a3459707bd27';
-
-SELECT *
-FROM user_settings
-WHERE
-    user_id = '299033dc-77a1-434c-8954-a3459707bd27';
-
+-- =========================
+-- RUN SESSIONS
+-- =========================
 CREATE TABLE run_sessions (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid (),
     owner_user_id UUID NOT NULL REFERENCES users (id) ON DELETE RESTRICT,
@@ -76,7 +53,6 @@ CREATE TABLE run_sessions (
     )
 );
 
--- indexes for real query paths
 CREATE INDEX run_sessions_owner_idx ON run_sessions (owner_user_id);
 
 CREATE INDEX run_sessions_active_idx ON run_sessions (owner_user_id)
@@ -85,7 +61,9 @@ WHERE
 
 CREATE INDEX run_sessions_started_at_idx ON run_sessions (started_at DESC);
 
----
+-- =========================
+-- SESSION PARTICIPANTS
+-- =========================
 CREATE TABLE session_participants (
     session_id UUID NOT NULL REFERENCES run_sessions (id) ON DELETE CASCADE,
     user_id UUID NOT NULL REFERENCES users (id) ON DELETE CASCADE,
@@ -95,33 +73,45 @@ CREATE TABLE session_participants (
     PRIMARY KEY (session_id, user_id)
 );
 
--- query paths we know we’ll need
 CREATE INDEX session_participants_user_idx ON session_participants (user_id);
 
 CREATE INDEX session_participants_active_idx ON session_participants (session_id)
 WHERE
     left_at IS NULL;
 
----
+-- =========================
+-- INVITES (PHASE 7 SAFE)
+-- =========================
+
+
 CREATE TABLE invites (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid (),
-    from_user_id UUID NOT NULL REFERENCES users (id) ON DELETE CASCADE,
-    to_user_id UUID NOT NULL REFERENCES users (id) ON DELETE CASCADE,
-    session_type TEXT NOT NULL CHECK (
-        session_type IN ('public', 'private')
-    ),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+
+    from_user_id UUID NOT NULL
+        REFERENCES users (id) ON DELETE CASCADE,
+
+    to_user_id UUID NOT NULL
+        REFERENCES users (id) ON DELETE CASCADE,
+
+    session_id UUID NOT NULL
+        REFERENCES run_sessions (id) ON DELETE CASCADE,
+
+    session_type TEXT NOT NULL
+        CHECK (session_type IN ('public', 'private')),
+
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     accepted_at TIMESTAMPTZ,
     declined_at TIMESTAMPTZ,
-    CHECK (
-        NOT (
-            accepted_at IS NOT NULL
-            AND declined_at IS NOT NULL
-        )
+    revoked_at TIMESTAMPTZ,
+
+CHECK (
+        (accepted_at IS NOT NULL)::int +
+        (declined_at IS NOT NULL)::int +
+        (revoked_at IS NOT NULL)::int
+        <= 1
     )
 );
 
--- query paths we know we’ll hit
 CREATE INDEX invites_to_user_idx ON invites (to_user_id, created_at DESC);
 
 CREATE INDEX invites_from_user_idx ON invites (from_user_id);
@@ -129,9 +119,12 @@ CREATE INDEX invites_from_user_idx ON invites (from_user_id);
 CREATE INDEX invites_pending_idx ON invites (to_user_id)
 WHERE
     accepted_at IS NULL
-    AND declined_at IS NULL;
+    AND declined_at IS NULL
+    AND revoked_at IS NULL;
 
----
+-- =========================
+-- SESSION MESSAGES
+-- =========================
 CREATE TABLE session_messages (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid (),
     session_id UUID NOT NULL REFERENCES run_sessions (id) ON DELETE CASCADE,
