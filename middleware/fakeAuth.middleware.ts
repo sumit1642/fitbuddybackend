@@ -1,3 +1,4 @@
+// middleware/fakeAuth.middleware.ts
 import { Request, Response, NextFunction } from "express";
 
 export function fakeAuth(req: Request, _res: Response, next: NextFunction) {
