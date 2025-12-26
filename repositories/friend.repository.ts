@@ -11,6 +11,12 @@ export type FriendRequestRow = {
 	declined_at: string | null;
 };
 
+export type FriendRow = {
+	user_id: string;
+	friend_user_id: string;
+	created_at: string;
+};
+
 export const FriendRepository = {
 	/**
 	 * Check if two users are friends.
@@ -28,6 +34,23 @@ export const FriendRepository = {
 			[userA, userB],
 		);
 		return rows.length > 0;
+	},
+
+	/**
+	 * List all friends for a user.
+	 * Simple indexed read.
+	 */
+	async listFriends(userId: string): Promise<FriendRow[]> {
+		const { rows } = await dbPool.query<FriendRow>(
+			`
+			SELECT user_id, friend_user_id, created_at
+			FROM friends
+			WHERE user_id = $1
+			ORDER BY created_at DESC
+			`,
+			[userId],
+		);
+		return rows;
 	},
 
 	/**
