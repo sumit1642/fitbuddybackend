@@ -1,4 +1,5 @@
-import pg from "pg";
+// repositories/db.ts
+import pg from "pg"
 import { env } from "../config/env.js";
 
 const { Pool } = pg;
