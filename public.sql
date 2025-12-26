@@ -1,4 +1,4 @@
--- Active: 1766707967824@@127.0.0.1@5432@fitbuddy
+-- Active: 1766707967824@@127.0.0.1@5432@fitbuddy_testdb
 -- =========================
 -- USERS
 -- =========================
@@ -153,3 +153,24 @@ WHERE
 CREATE INDEX friend_requests_to_user_idx ON friend_requests (to_user_id, created_at DESC);
 
 CREATE INDEX friend_requests_from_user_idx ON friend_requests (from_user_id, created_at DESC);
+
+-- =========================
+-- FRIENDS
+-- =========================
+
+-- Prevent self-friendship
+CREATE TABLE friends (
+    user_id UUID NOT NULL
+        REFERENCES users (id) ON DELETE CASCADE,
+
+    friend_user_id UUID NOT NULL
+        REFERENCES users (id) ON DELETE CASCADE,
+
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+
+    PRIMARY KEY (user_id, friend_user_id),
+
+CHECK (user_id <> friend_user_id) );
+
+-- Fast lookup: "are these two friends?"
+CREATE INDEX friends_lookup_idx ON friends (user_id, friend_user_id);
