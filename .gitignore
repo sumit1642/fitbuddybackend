@@ -43,6 +43,8 @@ Thumbs.db
 # Coverage / Tests
 # =========================
 coverage/
+.vitest/
+test-results/
 
 # =========================
 # Temporary / Cache
