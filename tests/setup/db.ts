@@ -1,5 +1,6 @@
 // tests/setup/db.ts
 import { dbPool } from "../../repositories/db.js";
+import { redis } from "../../infrastructure/redis/client.js";
 
 /**
  * Truncate all test tables to ensure clean state.
@@ -15,6 +16,9 @@ export async function cleanDatabase() {
 			users
 		CASCADE
 	`);
+
+	// Clean Redis as well
+	await redis.flushDb();
 }
 
 /**
