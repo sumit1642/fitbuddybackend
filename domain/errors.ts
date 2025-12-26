@@ -70,3 +70,91 @@ export class InvalidSessionStateError extends DomainError {
 		super(message);
 	}
 }
+
+/**
+ * Thrown when an invite cannot be found.
+ */
+export class InviteNotFoundError extends DomainError {
+	readonly code = "INVITE_NOT_FOUND";
+
+	constructor(inviteId: string) {
+		super(`Invite ${inviteId} not found`);
+	}
+}
+
+/**
+ * Thrown when trying to modify an invite that's no longer pending.
+ */
+export class InviteNotPendingError extends DomainError {
+	readonly code = "INVITE_NOT_PENDING";
+
+	constructor() {
+		super("Invite no longer pending");
+	}
+}
+
+/**
+ * Thrown when a user tries to accept/decline an invite that's not theirs.
+ */
+export class NotYourInviteError extends DomainError {
+	readonly code = "NOT_YOUR_INVITE";
+
+	constructor() {
+		super("Not your invite");
+	}
+}
+
+/**
+ * Thrown when trying to accept an invite for a session that's ended.
+ */
+export class SessionNoLongerActiveError extends DomainError {
+	readonly code = "SESSION_NO_LONGER_ACTIVE";
+
+	constructor() {
+		super("Session no longer active");
+	}
+}
+
+/**
+ * Thrown when only the session owner can perform an action.
+ */
+export class OnlyOwnerCanInviteError extends DomainError {
+	readonly code = "ONLY_OWNER_CAN_INVITE";
+
+	constructor() {
+		super("Only owner can invite");
+	}
+}
+
+/**
+ * Thrown when only the session owner can revoke an invite.
+ */
+export class OnlyOwnerCanRevokeError extends DomainError {
+	readonly code = "ONLY_OWNER_CAN_REVOKE";
+
+	constructor() {
+		super("Only owner can revoke");
+	}
+}
+
+/**
+ * Thrown when a user has disabled invites.
+ */
+export class UserDisabledInvitesError extends DomainError {
+	readonly code = "USER_DISABLED_INVITES";
+
+	constructor() {
+		super("User has disabled invites");
+	}
+}
+
+/**
+ * Thrown when user settings cannot be found.
+ */
+export class UserSettingsNotFoundError extends DomainError {
+	readonly code = "USER_SETTINGS_NOT_FOUND";
+
+	constructor(userId: string) {
+		super(`User settings not found for user ${userId}`);
+	}
+}
