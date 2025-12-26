@@ -158,3 +158,47 @@ export class UserSettingsNotFoundError extends DomainError {
 		super(`User settings not found for user ${userId}`);
 	}
 }
+
+/**
+ * Thrown when a friend request cannot be found.
+ */
+export class FriendRequestNotFoundError extends DomainError {
+	readonly code = "FRIEND_REQUEST_NOT_FOUND";
+
+	constructor(requestId: string) {
+		super(`Friend request ${requestId} not found`);
+	}
+}
+
+/**
+ * Thrown when trying to modify a friend request that's no longer pending.
+ */
+export class FriendRequestNotPendingError extends DomainError {
+	readonly code = "FRIEND_REQUEST_NOT_PENDING";
+
+	constructor() {
+		super("Friend request no longer pending");
+	}
+}
+
+/**
+ * Thrown when a user tries to accept/decline a friend request that's not theirs.
+ */
+export class NotYourFriendRequestError extends DomainError {
+	readonly code = "NOT_YOUR_FRIEND_REQUEST";
+
+	constructor() {
+		super("Not your friend request");
+	}
+}
+
+/**
+ * Thrown when trying to send a friend request to someone already a friend.
+ */
+export class AlreadyFriendsError extends DomainError {
+	readonly code = "ALREADY_FRIENDS";
+
+	constructor() {
+		super("Already friends");
+	}
+}
