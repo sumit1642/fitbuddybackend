@@ -51,6 +51,11 @@ export const PresenceService = {
 			return null;
 		}
 
+		// Type guard: redis.get can return Buffer in some configs
+		if (typeof value !== "string") {
+			return null;
+		}
+
 		return JSON.parse(value) as PresencePayload;
 	},
 
