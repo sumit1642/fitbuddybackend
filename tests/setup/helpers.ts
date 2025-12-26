@@ -17,11 +17,6 @@ export function makeRequest(userId: string) {
 }
 
 /**
- * Update fakeAuth middleware to read from header for tests
- * Add this to middleware/fakeAuth.middleware.ts for testing
- */
-
-/**
  * Database query helpers for test assertions
  */
 export async function getInviteById(inviteId: string) {
@@ -88,4 +83,43 @@ export async function createTestInvite(fromUserId: string, toUserId: string, ses
 		[fromUserId, toUserId, sessionId, session.type],
 	);
 	return rows[0];
+}
+
+/**
+ * Create a test friend request
+ */
+export async function createTestFriendRequest(fromUserId: string, toUserId: string) {
+	const { rows } = await dbPool.query(
+		`
+		INSERT INTO friend_requests (from_user_id, to_user_id)
+		VALUES ($1, $2)
+		RETURNING *
+		`,
+		[fromUserId, toUserId],
+	);
+	return rows[0];
+}
+
+/**
+ * Get friend request by ID
+ */
+export async function getFriendRequestById(requestId: string) {
+	const { rows } = await dbPool.query("SELECT * FROM friend_requests WHERE id = $1", [requestId]);
+	return rows[0] ?? null;
+}
+
+/**
+ * Check if two users are friends
+ */
+export async function areFriends(userA: string, userB: string): Promise<boolean> {
+	const { rows } = await dbPool.query(
+		`
+		SELECT 1
+		FROM friends
+		WHERE user_id = $1 AND friend_user_id = $2
+		LIMIT 1
+		`,
+		[userA, userB],
+	);
+	return rows.length > 0;
 }
