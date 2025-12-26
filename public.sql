@@ -84,32 +84,20 @@ WHERE
 -- INVITES (PHASE 7 SAFE)
 -- =========================
 
-
 CREATE TABLE invites (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-
-    from_user_id UUID NOT NULL
-        REFERENCES users (id) ON DELETE CASCADE,
-
-    to_user_id UUID NOT NULL
-        REFERENCES users (id) ON DELETE CASCADE,
-
-    session_id UUID NOT NULL
-        REFERENCES run_sessions (id) ON DELETE CASCADE,
-
-    session_type TEXT NOT NULL
-        CHECK (session_type IN ('public', 'private')),
-
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid (),
+    from_user_id UUID NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+    to_user_id UUID NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+    session_id UUID NOT NULL REFERENCES run_sessions (id) ON DELETE CASCADE,
+    session_type TEXT NOT NULL CHECK (
+        session_type IN ('public', 'private')
+    ),
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     accepted_at TIMESTAMPTZ,
     declined_at TIMESTAMPTZ,
     revoked_at TIMESTAMPTZ,
-
-CHECK (
-        (accepted_at IS NOT NULL)::int +
-        (declined_at IS NOT NULL)::int +
-        (revoked_at IS NOT NULL)::int
-        <= 1
+    CHECK (
+        (accepted_at IS NOT NULL)::int + (declined_at IS NOT NULL)::int + (revoked_at IS NOT NULL)::int <= 1
     )
 );
 
@@ -135,3 +123,33 @@ CREATE TABLE session_messages (
 );
 
 CREATE INDEX session_messages_session_idx ON session_messages (session_id, sent_at);
+
+-- =========================
+-- FRIEND REQUESTS
+-- =========================
+
+-- Prevent impossible states
+-- Prevent sending request to self
+CREATE TABLE friend_requests (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid (),
+    from_user_id UUID NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+    to_user_id UUID NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    accepted_at TIMESTAMPTZ,
+    declined_at TIMESTAMPTZ,
+    CHECK (
+        (accepted_at IS NOT NULL)::int + (declined_at IS NOT NULL)::int <= 1
+    ),
+    CHECK (from_user_id <> to_user_id)
+);
+
+-- One pending request max per direction
+CREATE UNIQUE INDEX friend_requests_pending_unique ON friend_requests (from_user_id, to_user_id)
+WHERE
+    accepted_at IS NULL
+    AND declined_at IS NULL;
+
+-- Query paths
+CREATE INDEX friend_requests_to_user_idx ON friend_requests (to_user_id, created_at DESC);
+
+CREATE INDEX friend_requests_from_user_idx ON friend_requests (from_user_id, created_at DESC);
