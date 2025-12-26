@@ -54,3 +54,28 @@ export interface UserSettings {
 	user_id: string;
 	invite_permissions: InvitePermissions;
 }
+
+/**
+ * A friend request sent from one user to another.
+ * State is derived from accepted_at / declined_at.
+ */
+export interface FriendRequest {
+	id: string;
+
+	from_user_id: string;
+	to_user_id: string;
+
+	created_at: Date;
+	accepted_at: Date | null;
+	declined_at: Date | null;
+}
+
+/**
+ * A friendship relationship between two users.
+ * Bidirectional: two rows exist for each friendship.
+ */
+export interface Friend {
+	user_id: string;
+	friend_user_id: string;
+	created_at: Date;
+}
