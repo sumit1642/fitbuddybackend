@@ -202,3 +202,14 @@ export class AlreadyFriendsError extends DomainError {
 		super("Already friends");
 	}
 }
+
+/**
+ * Thrown when trying to send a friend request to self.
+ */
+export class CannotFriendSelfError extends DomainError {
+	readonly code = "CANNOT_FRIEND_SELF";
+
+	constructor() {
+		super("Cannot send friend request to self");
+	}
+}

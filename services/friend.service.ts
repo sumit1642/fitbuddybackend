@@ -6,6 +6,7 @@ import {
 	FriendRequestNotPendingError,
 	NotYourFriendRequestError,
 	AlreadyFriendsError,
+	CannotFriendSelfError,
 } from "../domain/errors.js";
 import type { FriendRequest } from "../domain/types.js";
 
@@ -17,7 +18,7 @@ export const FriendService = {
 	async sendRequest(fromUserId: string, toUserId: string): Promise<FriendRequest> {
 		// Prevent self-friendship
 		if (fromUserId === toUserId) {
-			throw new Error("Cannot send friend request to self");
+			throw new CannotFriendSelfError();
 		}
 
 		// Check if already friends
@@ -75,6 +76,14 @@ export const FriendService = {
 				// Roll back and fail gracefully
 				await client.query("ROLLBACK");
 				throw new FriendRequestNotPendingError();
+			}
+
+			// Check if already friends (defensive guard for edge cases)
+			const alreadyFriends = await FriendRepository.areFriends(request.from_user_id, request.to_user_id);
+
+			if (alreadyFriends) {
+				await client.query("ROLLBACK");
+				throw new AlreadyFriendsError();
 			}
 
 			// Create bidirectional friendship

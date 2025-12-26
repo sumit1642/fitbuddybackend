@@ -33,6 +33,7 @@ export function errorHandler(err: Error, _req: Request, res: Response, _next: Ne
 			case "INVALID_SESSION_STATE":
 			case "ACTIVE_SESSION_EXISTS":
 			case "USER_SETTINGS_NOT_FOUND":
+			case "CANNOT_FRIEND_SELF":
 				return res.status(400).json({ error: err.message });
 
 			// Default to 400 for unknown domain errors
