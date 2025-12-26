@@ -8,7 +8,7 @@ import {
 	AlreadyFriendsError,
 	CannotFriendSelfError,
 } from "../domain/errors.js";
-import type { FriendRequest } from "../domain/types.js";
+import type { FriendRequest, Friend } from "../domain/types.js";
 
 export const FriendService = {
 	/**
@@ -122,6 +122,35 @@ export const FriendService = {
 		if (!declined) {
 			throw new FriendRequestNotPendingError();
 		}
+	},
+
+	/**
+	 * List all friends for a user.
+	 * Pure read - no business logic.
+	 */
+	async listFriends(userId: string): Promise<Friend[]> {
+		const rows = await FriendRepository.listFriends(userId);
+		return rows.map((row) => ({
+			user_id: row.user_id,
+			friend_user_id: row.friend_user_id,
+			created_at: new Date(row.created_at),
+		}));
+	},
+
+	/**
+	 * List pending friend requests for a user.
+	 * Pure read - no business logic.
+	 */
+	async listPendingRequests(userId: string): Promise<FriendRequest[]> {
+		const rows = await FriendRequestRepository.listPendingForUser(userId);
+		return rows.map((row) => ({
+			id: row.id,
+			from_user_id: row.from_user_id,
+			to_user_id: row.to_user_id,
+			created_at: new Date(row.created_at),
+			accepted_at: row.accepted_at ? new Date(row.accepted_at) : null,
+			declined_at: row.declined_at ? new Date(row.declined_at) : null,
+		}));
 	},
 
 	/**
