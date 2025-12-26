@@ -47,6 +47,11 @@ describe("Invite Accept", () => {
 		// Assertions: HTTP
 		expect(res.status).toBe(204);
 
+		// Assertions: DB - Session still active
+		const activeSession = await getSessionById(session.id);
+		expect(activeSession).toBeTruthy();
+		expect(activeSession.ended_at).toBeNull();
+
 		// Assertions: DB - Invite accepted
 		const updatedInvite = await getInviteById(invite.id);
 		expect(updatedInvite.accepted_at).not.toBeNull();
@@ -143,6 +148,10 @@ describe("Invite Accept", () => {
 		const session = await createTestSession(TEST_USERS.OWNER.id);
 		const invite = await createTestInvite(TEST_USERS.OWNER.id, TEST_USERS.INVITEE.id, session.id);
 
+		// Verify session is active
+		const activeSession = await getSessionById(session.id);
+		expect(activeSession.ended_at).toBeNull();
+
 		// Setup: Owner revokes
 		await makeRequest(TEST_USERS.OWNER.id).post(`/api/invites/${invite.id}/revoke`);
 
@@ -166,6 +175,11 @@ describe("Invite Accept", () => {
 		await dbPool.query("UPDATE run_sessions SET ended_at = now(), ended_reason = 'completed' WHERE id = $1", [
 			session.id,
 		]);
+
+		// Verify session is ended
+		const endedSession = await getSessionById(session.id);
+		expect(endedSession.ended_at).not.toBeNull();
+		expect(endedSession.ended_reason).toBe("completed");
 
 		// Action: Try to accept
 		const res = await makeRequest(TEST_USERS.INVITEE.id).post(`/api/invites/${invite.id}/accept`);
