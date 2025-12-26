@@ -1,5 +1,5 @@
 // services/location.service.ts
-import { redis } from "../infrastructure/redis/client.js"
+import { redis } from "../infrastructure/redis/client.js";
 import { RedisKeys } from "../infrastructure/redis/keys.js";
 
 const LOCATION_TTL_SECONDS = 10;
@@ -37,6 +37,11 @@ export const LocationService = {
 		const value = await redis.get(RedisKeys.location(userId));
 
 		if (!value) {
+			return null;
+		}
+
+		// Type guard: redis.get can return Buffer in some configs
+		if (typeof value !== "string") {
 			return null;
 		}
 
