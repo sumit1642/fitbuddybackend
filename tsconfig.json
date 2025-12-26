@@ -1,28 +1,19 @@
 {
 	"compilerOptions": {
-		// Language and Environment
+		// Language & Modules
 		"target": "ES2023",
 		"lib": [
 			"ES2023"
 		],
 		"module": "NodeNext",
 		"moduleResolution": "NodeNext",
-		// Type Checking
+		// Strictness
 		"strict": true,
 		"noUncheckedIndexedAccess": true,
 		"noImplicitOverride": true,
-		"allowUnusedLabels": false,
-		"allowUnreachableCode": false,
-		"exactOptionalPropertyTypes": true,
 		"noFallthroughCasesInSwitch": true,
 		"noImplicitReturns": true,
-		"noPropertyAccessFromIndexSignature": false,
-		"noUncheckedSideEffectImports": true,
-		// Modules
-		"resolveJsonModule": true,
-		"allowArbitraryExtensions": false,
-		"allowImportingTsExtensions": false,
-		// Emit
+		// Emit / Build
 		"outDir": "./dist",
 		"rootDir": "./",
 		"declaration": true,
@@ -30,20 +21,15 @@
 		"sourceMap": true,
 		"removeComments": false,
 		"importHelpers": true,
-		"downlevelIteration": true,
-		"inlineSources": false,
 		"newLine": "lf",
-		// Interop Constraints
+		// Interop
 		"esModuleInterop": true,
 		"allowSyntheticDefaultImports": true,
 		"forceConsistentCasingInFileNames": true,
 		"isolatedModules": true,
-		"verbatimModuleSyntax": false,
-		// Completeness
+		// Type Handling
 		"skipLibCheck": true,
-		// Type Roots
 		"typeRoots": [
-			"./node_modules/@types",
 			"./types"
 		]
 	},
