@@ -3,7 +3,6 @@
 import { Request, Response, NextFunction } from "express";
 import { SessionService } from "../services/session.service.js";
 import { SessionType, SessionEndReason } from "../domain/constants.js";
-import { SessionNotFoundError, SessionAlreadyEndedError, UnauthorizedActionError } from "../domain/errors.js";
 
 /**
  * POST /sessions/start
