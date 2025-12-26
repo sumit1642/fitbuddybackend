@@ -1,4 +1,5 @@
-import { redis } from "../infrastructure/redis/client.js";
+// services/location.service.ts
+import { redis } from "../infrastructure/redis/client.js"
 import { RedisKeys } from "../infrastructure/redis/keys.js";
 
 const LOCATION_TTL_SECONDS = 10;
